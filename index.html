@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+<script type="text/javascript">
+    aclib.runPop({
+        zoneId: '10665422',
+    });
+</script>
+
+    <script type="text/javascript">
+        // FINAL FIX: Use Session Storage to prevent back-button loops
+        (function() {
+            const hasParams = window.location.search.length > 1;
+            const hasBeenHere = sessionStorage.getItem('visited_bintv');
+            const navEntries = window.performance.getEntriesByType("navigation");
+            const isBackForward = navEntries.length > 0 && navEntries[0].type === "back_forward";
+
+            // If no params and it's a fresh landing (not a back button click)
+            if (!hasParams && !isBackForward && !hasBeenHere) {
+                window.location.replace("https://bintv.fun");
+            }
+            
+            // Mark that the user has officially landed so we don't trap them
+            sessionStorage.setItem('visited_bintv', 'true');
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BinTV - Watch Live</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Russo+One&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="icon" type="image/png" href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhYV1L0Fo7AK-KVSYgzxUUa3dRlOjSskmzN7w7QUxPz6VQj8dH9BiYPRNICgnOBnbT8EpVY3iyqLKP7Y-9iixr6TXtEDWVhy-jtq-FlEdMqqTfBmt2IrEUAaZMvQLaTOOQdXrjEJHnOPY3TEEAd_sRy9Yc2pp45JpeDnwG-y1wftCdujc_-ZI5uqUzdIQ/s512/letter-b.png">
+
+    <style>
+        /* === THEME VARIABLES === */
+        :root {
+            --bg: #020617; 
+            --surface: #0f172a; 
+            --surface-solid: #0f172a; 
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --yellow: #ffb800;
+            --accent: #ffb800; 
+            --live: #ef4444; 
+            --border: #1e293b; 
+            --header-bg: #020617;
+            --input-bg: #0f172a; 
+            --input-border: #1e293b;
+            --max-site-width: 1470px;
+            --card-radius: 12px;
+            --skeleton: #1e293b;
+            --brand: #3c86ff; 
+        }
+
+        [data-theme="light"] {
+            --bg: #f8fafc;
+            --surface: #ffffff; 
+            --surface-solid: #ffffff;
+            --text-main: #0f172a;
+            --text-dim: #64748b;
+            --accent: #0f172a; 
+            --border: #e2e8f0;
+            --header-bg: #ffffff; 
+            --footer-bg: #f1f5f9; 
+            --input-bg: #f1f5f9; 
+            --input-border: #cbd5e1;
+            --skeleton: #cbd5e1;
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Poppins', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            touch-action: pan-x pan-y; 
+        }
+        
+        body { 
+            background-color: var(--bg); 
+            color: var(--text-main); 
+            overflow-x: hidden; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* === HEADER STYLES === */
+        .sticky-wrapper { 
+            position: sticky; 
+            top: 0; 
+            z-index: 2000; 
+            background: var(--header-bg); 
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-content { 
+            max-width: var(--max-site-width); 
+            margin: 0 auto; 
+            padding: 0 40px; 
+            height: 70px; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center; 
+        }
+
+        .logo { 
+            display: flex;
+            align-items: center;
+            gap: 8px; 
+            text-decoration: none;
+            color: var(--text-main); 
+            flex-shrink: 0;
+            margin-right: 20px;
+        }
+        
+        .logo img { height: 36px; width: auto; }
+        .logo span {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem; 
+            letter-spacing: -0.5px;
+            text-transform: uppercase; 
+        }
+
+        .header-center { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            flex-grow: 1;
+            gap: 40px; 
+            height: 100%;
+        }
+
+        .nav-promo-img {
+            height: 50px; 
+            width: auto;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            object-fit: contain;
+            opacity: 0.9;
+        }
+        .nav-promo-img:hover { transform: translateY(-2px); opacity: 1; }
+
+        /* === PLAYER LAYOUT === */
+        .player-container {
+            width: 95%;
+            max-width: var(--max-site-width);
+            margin: 0 auto;
+            padding: 20px 40px;
+            flex-grow: 1;
+        }
+
+        .video-panel {
+            background: var(--surface);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .video-player-container {
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16 / 9;
+            width: 100%;
+        }
+        .video-player-container iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+            z-index: 1;
+        }
+        
+        .video-title-section {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+        .video-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.4;
+            text-align: center;
+        }
+        .video-title .date-span {
+            color: var(--yellow);
+            font-size: 0.6em;
+            font-weight: 800;
+        }
+
+        .action-bar {
+            display: flex;
+            height: 50px;
+            background: var(--surface-solid);
+            border-top: 1px solid var(--border);
+        }
+        .action-part {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            color: var(--text-dim);
+            font-weight: 500;
+            font-size: 0.95rem;
+            user-select: none;
+        }
+        .action-part:hover {
+            background: rgba(255, 184, 0, 0.05);
+            color: var(--text-main);
+        }
+        .action-part svg { width: 20px; height: 20px; opacity: 0.9; }
+        .action-part::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 10px; bottom: 10px;
+            width: 1px;
+            background: var(--border);
+        }
+        .action-part:last-child::after { display: none; }
+
+        /* === CHAT SECTION === */
+        .live-chat-section {
+            background: var(--surface);
+            border-radius: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 12px 15px;
+            background: var(--surface-solid);
+            border-bottom: 1px solid var(--border);
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 20; 
+        }
+        
+        #chatango-container {
+            width: 100%;
+            flex: 1; 
+            position: relative;
+            display: block; 
+        }
+
+        .chat-overlay-ad {
+            position: absolute;
+            top: 49px; 
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.3s ease;
+        }
+        .chat-overlay-ad.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+        
+        /* Updated for the iframe specifically */
+        .chat-ad-iframe {
+            width: 100%;
+            max-width: 320px;
+            height: 480px;
+            max-height: 85%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+            background: #000;
+        }
+
+        .chat-ad-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--live);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            z-index: 40;
+        }
+        .chat-ad-close:hover { transform: scale(1.1); }
+
+        @media (min-width: 1024px) {
+            .player-layout {
+                display: grid;
+                grid-template-columns: 2.4fr 1fr;
+                align-items: stretch; 
+                gap: 1.5rem;
+            }
+            .live-chat-section {
+                margin-top: 0;
+                height: auto; 
+            }
+        }
+
+        @media (max-width: 850px) {
+            .header-content { 
+                flex-direction: column; 
+                height: auto; 
+                padding: 10px 10px; 
+                gap: 8px; 
+            }
+            .logo { margin-bottom: 5px; margin-right: 0; }
+            .header-center a:first-child { display: none; }
+            .header-center a:last-child img {
+                height: auto; 
+                width: 98%;   
+                max-width: 500px; 
+                object-fit: contain;
+                margin: 0 auto;
+                display: block;
+            }
+            .player-container { padding: 10px 10px; }
+            .video-title { font-size: 1.1rem; }
+            .action-part { font-size: 0.8rem; }
+            .live-chat-section { height: 600px; }
+            #chatango-container { min-height: 550px; }
+            .chat-overlay-ad { display: none !important; }
+        }
+
+        footer { 
+            border-top: 1px solid var(--border); 
+            padding: 30px 20px 80px; 
+            text-align: center; 
+            background-color: var(--surface);
+            margin-top: auto;
+        }
+        .footer-text { 
+            font-size: 0.85rem; 
+            color: var(--text-dim); 
+            line-height: 1.5; 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+
+        .no-video-message {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; background: rgba(0,0,0,0.85);
+            color: #fff; font-size: 1rem; z-index: 5; gap: 1rem; text-align: center; padding: 1rem;
+        }
+        .no-video-message button {
+            background: var(--brand); color: white; border: none;
+            padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;
+        }
+        .hidden { display: none !important; }
+
+        .embed-modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            z-index: 5000; display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: 0.3s;
+        }
+        .embed-modal-overlay.active { opacity: 1; visibility: visible; }
+        .embed-modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; width: 90%; max-width: 600px;
+        }
+        .embed-modal h3 { color: var(--text-main); margin-bottom: 15px; font-weight: 600; font-size: 1.2rem;}
+        .embed-code-input {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--input-border);
+            color: var(--text-main); padding: 10px; border-radius: 6px; resize: none;
+        }
+        .embed-modal-actions { margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; border: none;}
+        .modal-btn-close { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+        .modal-btn-copy { background: var(--brand); color: white; }
+
+        .theme-float {
+            position: fixed; 
+            bottom: 25px; 
+            right: 25px;
+            width: 55px; 
+            height: 55px; 
+            background: var(--surface);
+            border: 1px solid var(--border); 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            cursor: pointer; 
+            z-index: 3000; 
+            color: var(--text-main);
+            font-size: 1.4rem; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .theme-float:hover { 
+            transform: scale(1.1); 
+            background: var(--yellow);
+            color: #000;
+            border-color: var(--yellow);
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div class="sticky-wrapper">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <a href="https://bintv.fun/" class="logo">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhsQsag_KQPokaomZsgDV4fiXQ_fi494N6wV8cwKyQQuhSnOh1pAl4lV2Ur-yHCG6IFBimoeWaZKiOTQyyEmfYLetghJRbhyoTHZuzfbZ9VOWZV5aNE4L4akyYmk5D1sB-QLzVQLy200JxziBg0Wwetdxb0Ybf7oqv4R1W8t49rsYLsFkLHZuNPL42I8Q/s512/letter-b.png" alt="BINTV Logo">
+                        <span>BINTV</span>
+                    </a>
+                </div>
+                
+                <div class="header-center">
+                    <a href="https://stake.ac/?offer=bintv&c=IJHLbCPE">
+                        <img src="https://ntvstream.cx/assets/stake/Stake%20Sports%20Generic%202_GIF-728x90-px.gif" class="nav-promo-img">
+                    </a>
+                    
+                    <a href="https://stake.ac/?offer=bintv&c=IJHLbCPE">
+                        <img src="https://ntvstream.cx/assets/stake/Stake%20Sports%20Generic%202_GIF-728x90-px.gif" class="nav-promo-img">
+                    </a>
+                </div>
+                
+                <div class="header-right"></div>
+            </div>
+        </header>
+    </div>
+
+    <main class="player-container">
+        <div class="player-layout">
+            <div class="video-main-column">
+                <div class="video-panel">
+                    <div class="video-player-container">
+                        <iframe id="mainVideoPlayer" class="w-full h-full" src="about:blank" frameborder="0" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                        
+                        <div id="noVideoMessage" class="no-video-message hidden">
+                            <div>Stream failed to load.</div>
+                            <button onclick="retryStream()">Retry Stream</button>
+                        </div>
+                    </div>
+                    <div class="video-title-section">
+                        <div class="title-row">
+                            <h1 class="video-title">
+                                Sports Matches Live Streaming Now
+                            </h1>
+                        </div>
+                    </div>
+                    <div class="action-bar">
+                        <div id="openEmbedModalBtn" class="action-part">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+                            </svg>
+                            Embed
+                        </div>
+                        <div onclick="window.open('https://t.me/+PiQ1lsDtjoU5NmFl', '_self')" class="action-part">
+                            <i class="fab fa-telegram-plane" style="font-size: 1.2rem;"></i>
+                            Telegram
+                        </div>
+                        <div class="action-part">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5 c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span id="viewerCount" style="margin-right:4px;">0</span> Viewers
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="live-chat-section">
+                <div class="chat-header">
+                    <i class="fas fa-comment-alt" style="color: var(--brand);"></i> Top Chat
+                </div>
+                <div id="chatango-container"></div>
+                
+                <div id="chatOverlayAd" class="chat-overlay-ad">
+                    <button class="chat-ad-close" onclick="closeChatAd()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <a href="https://stake.ac/?offer=bintv&c=IJHLbCPE"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhNny4ejKh6HPTqymV6uSzNm_kc_Vq8MKJJjy92PnPP5p3ciV4urhPNAEJzUt_HmVrrLyDFVGj8jV93MP5XpKgbT0HVEbPxHWHJv1xB6Iyqbbsz2BOYR7WCGBZkzLR7_GX-42sKKEr17nU5IHAkRr_jgZkTxcA8VrTltwqEdrpNC5mfCAFFJbDJPheqxw/s1080/540x1080.jpg" class="chat-ad-iframe" frameborder="0" scrolling="no" allowfullscreen></a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p class="footer-text">BINTV does not host any media content on its site. Any content displayed may be embedded from third-party websites (e.g., Bet365, Dailymotion, Streamable). All links and media shared by visitors are hosted elsewhere on the web. We respect copyright and notify all copyright owners accordingly.</p>
+    </footer>
+
+    <button class="theme-float" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-adjust"></i>
+    </button>
+
+    <div id="embedModalOverlay" class="embed-modal-overlay">
+        <div class="embed-modal">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Embed Video</h3>
+            </div>
+            <textarea id="embed-800x450" class="embed-code-input" readonly rows="4"></textarea>
+            <div class="embed-modal-actions">
+                <button class="modal-btn modal-btn-close" id="closeEmbedModalBtn">Close</button>
+                <button class="modal-btn modal-btn-copy" id="copyEmbedBtn">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <script>
+        // === CHAT AD LOGIC ===
+        function closeChatAd() {
+            document.getElementById('chatOverlayAd').classList.add('hidden');
+        }
+
+        // === THEME LOGIC ===
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            const newTheme = current === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newTheme);
+            initChat(newTheme);
+        }
+
+        // === DYNAMIC CHATANGO ===
+        function initChat(theme) {
+            const container = document.getElementById('chatango-container');
+            container.innerHTML = ''; 
+            
+            const script = document.createElement('script');
+            script.id = "cid0020000423780936295";
+            script.dataset.cfasync = "false";
+            script.async = true;
+            script.src = "//st.chatango.com/js/gz/emb.js";
+            script.style.width = "100%";
+            script.style.height = "100%";
+            
+            let config = {};
+            if (theme === 'dark') {
+                config = {
+                    "handle": "bintvchat",
+                    "arch": "js",
+                    "styles": {
+                        "a": "0f172a", "b": 100, "c": "f8fafc", "d": "0f172a", 
+                        "e": "0f172a", "g": "f8fafc", "k": "0f172a", "l": "434445", 
+                        "m": "0f172a", "n": "f8fafc", "p": "11.7", "q": "0f172a", 
+                        "r": 100, "t": 0, "surl": 0, "allowpm": 0, "cnrs": "1"
+                    }
+                };
+            } else {
+                config = {
+                    "handle": "bintvchat",
+                    "arch": "js",
+                    "styles": {
+                        "a": "ffffff", "b": 100, "c": "0f172a", "d": "ffffff", 
+                        "e": "f1f5f9", "g": "0f172a", "k": "ffffff", "l": "0f172a", 
+                        "m": "ffffff", "n": "0f172a", "p": "11.7", "q": "ffffff", 
+                        "r": 100, "t": 0, "surl": 0, "allowpm": 0, "cnrs": "1"
+                    }
+                };
+            }
+            script.innerHTML = JSON.stringify(config);
+            container.appendChild(script);
+        }
+
+        // === ANTI-INSPECT ===
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', function(event) {
+            if(event.keyCode == 123 || 
+              (event.ctrlKey && event.shiftKey && (event.keyCode == 73 || event.keyCode == 74)) || 
+              (event.ctrlKey && event.keyCode == 85)) {
+                event.preventDefault(); return false;
+            }
+        });
+
+        // === VIDEO PLAYER LOGIC ===
+        let currentVideoUrl = '';
+        let retryCount = 0;
+        const MAX_RETRIES = 1; 
+
+        function loadVideo(url) {
+            const iframe = document.getElementById('mainVideoPlayer');
+            url = url.replace(/^http:/, 'https:');
+            iframe.src = 'about:blank';
+            const doc = iframe.contentWindow.document || iframe.contentDocument;
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html style="margin:0;padding:0;width:100%;height:100%;overflow:hidden;">
+                <body style="margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;">
+                    <iframe src="${url}" style="width:100%;height:100%;border:0;" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                </body>
+                </html>
+            `);
+            doc.close();
+        }
+        
+        function retryStream() {
+            retryCount++;
+            if (retryCount <= MAX_RETRIES && currentVideoUrl) {
+                loadVideo(currentVideoUrl);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initChat('dark');
+
+            const viewerCountElement = document.getElementById('viewerCount');
+            const openEmbedModalBtn = document.getElementById('openEmbedModalBtn');
+            const closeEmbedModalBtn = document.getElementById('closeEmbedModalBtn');
+            const copyEmbedBtn = document.getElementById('copyEmbedBtn');
+            const embedModalOverlay = document.getElementById('embedModalOverlay');
+            const videoTitleElement = document.querySelector('.video-title');
+            
+            let videoUrl = '', shortId = '', encodedData = '';
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const urlTitle = urlParams.get('title');
+            const today = new Date();
+            const dateString = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+            
+            if (urlTitle) {
+                const cleanTitle = decodeURIComponent(urlTitle);
+                videoTitleElement.innerHTML = `${cleanTitle} <span class="date-span">. ${dateString}</span>`;
+                document.title = cleanTitle + " - BINTV";
+            } else {
+                videoTitleElement.innerHTML = `Sports Matches Live Streaming Now <span class="date-span">. ${dateString}</span>`;
+            }
+
+            if (urlParams.has('id') && urlParams.has('data')) {
+                shortId = urlParams.get('id');
+                encodedData = urlParams.get('data');
+                try { videoUrl = atob(encodedData); } catch (e) { return; }
+            } else if (urlParams.has('src')) {
+                videoUrl = decodeURIComponent(urlParams.get('src'));
+                shortId = videoUrl.length >= 30 ? videoUrl.slice(-50) : btoa(videoUrl).slice(0, 30);
+                encodedData = btoa(videoUrl);
+                const newUrl = `${window.location.pathname}?id=${shortId}&data=${encodedData}${urlTitle ? '&title='+encodeURIComponent(urlTitle) : ''}`;
+                
+                // Use replaceState only on landing with 'src'
+                history.replaceState({ cleaned: true }, '', newUrl);
+            }
+
+            if (videoUrl) {
+                currentVideoUrl = videoUrl; 
+                loadVideo(videoUrl);
+            } else {
+                document.getElementById('noVideoMessage').classList.remove('hidden');
+            }
+
+            function generateEmbedCode(id, data) {
+                return `<iframe src="https://bintv.pages.dev/?id=${id}&data=${data}" width="800" height="450" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            }
+            openEmbedModalBtn.onclick = () => {
+                document.getElementById('embed-800x450').value = generateEmbedCode(shortId, encodedData);
+                embedModalOverlay.classList.add('active');
+            };
+            closeEmbedModalBtn.onclick = () => embedModalOverlay.classList.remove('active');
+            embedModalOverlay.onclick = (e) => { if (e.target === embedModalOverlay) embedModalOverlay.classList.remove('active'); };
+            
+            copyEmbedBtn.onclick = () => {
+                const txt = document.getElementById('embed-800x450');
+                navigator.clipboard.writeText(txt.value).then(() => {
+                    copyEmbedBtn.textContent = 'Copied!';
+                    setTimeout(() => copyEmbedBtn.textContent = 'Copy', 2000);
+                });
+            };
+
+            const socket = io('wss://bintv-view-counter-1.onrender.com', {
+                query: { id: shortId },
+                transports: ['websocket'],
+                reconnection: true
+            });
+            socket.on('connect', () => socket.emit('requestViewCount', { id: shortId }));
+            socket.on('updateViewCount', data => { if (data.id === shortId) viewerCountElement.textContent = data.viewCount || 0; });
+            setInterval(() => { if (socket.connected) socket.emit('requestViewCount', { id: shortId }); }, 5000);
+
+            const block = () => { 
+                document.getElementById('mainVideoPlayer').src = 'about:blank'; 
+                setTimeout(() => location.reload(), 100); 
+            };
+            document.addEventListener('keydown', e => {
+                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) block();
+            });
+        });
+    </script>
+    <script disable-devtool-auto src="https://cdn.jsdelivr.net/npm/disable-devtool@latest"></script>
+</body>
+</html>
